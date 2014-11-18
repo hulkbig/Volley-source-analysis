@@ -52,14 +52,17 @@ import java.util.TreeMap;
 
 /**
  * A network performing Volley requests over an {@link HttpStack}.
+ * 一个通过HttpStack实现的Volley网络执行框架。
  */
 public class BasicNetwork implements Network {
     protected static final boolean DEBUG = VolleyLog.DEBUG;
 
+    //网络访问是否过慢--阈值
     private static int SLOW_REQUEST_THRESHOLD_MS = 3000;
-
+    
+    //默认的POOL大小
     private static int DEFAULT_POOL_SIZE = 4096;
-
+    
     protected final HttpStack mHttpStack;
 
     protected final ByteArrayPool mPool;
