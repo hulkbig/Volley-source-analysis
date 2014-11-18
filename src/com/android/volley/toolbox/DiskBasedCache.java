@@ -39,26 +39,33 @@ import java.util.Map;
 /**
  * Cache implementation that caches files directly onto the hard disk in the specified
  * directory. The default disk usage size is 5MB, but is configurable.
+ * 一个Cache的实现，主要是将文件缓存到磁盘当中。默认的大小是5MB，但是可以配置。
  */
 public class DiskBasedCache implements Cache {
 
     /** Map of the Key, CacheHeader pairs */
+    /** Key的map，需要注意的是，这里面的构造参数，前两个是大小和调整因子，就不多说，后面的true，则是是否根据访问顺序调整，可以用来LRU减少查找所需要的时间*/
     private final Map<String, CacheHeader> mEntries =
             new LinkedHashMap<String, CacheHeader>(16, .75f, true);
 
     /** Total amount of space currently used by the cache in bytes. */
+    /** cache所使用的空间的大小  */    
     private long mTotalSize = 0;
 
     /** The root directory to use for the cache. */
+    /** cache使用的目录 */
     private final File mRootDirectory;
 
     /** The maximum size of the cache in bytes. */
+    /** cache所能使用的最大的空间 */
     private final int mMaxCacheSizeInBytes;
 
     /** Default maximum disk usage in bytes. */
+    /** 默认的最大的空间 */
     private static final int DEFAULT_DISK_USAGE_BYTES = 5 * 1024 * 1024;
 
     /** High water mark percentage for the cache */
+    /** 这个不太懂，水位标志，用来做什么？ */
     private static final float HYSTERESIS_FACTOR = 0.9f;
 
     /** Magic number for current version of cache file format. */
@@ -85,6 +92,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Clears the cache. Deletes all cached files from disk.
+     * 清空cache。删除所有的cache文件。
      */
     @Override
     public synchronized void clear() {
@@ -101,6 +109,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Returns the cache entry with the specified key if it exists, null otherwise.
+     * 如果cache的key对应的文件存在，则返回cache的entry，如果没有，则null
      */
     @Override
     public synchronized Entry get(String key) {
@@ -110,11 +119,15 @@ public class DiskBasedCache implements Cache {
             return null;
         }
 
+        //根据key找到对应的文件
         File file = getFileForKey(key);
+        //一个包装输入类
         CountingInputStream cis = null;
         try {
             cis = new CountingInputStream(new FileInputStream(file));
+            //从cache中读取Header
             CacheHeader.readHeader(cis); // eat header
+            //读取剩下的数据
             byte[] data = streamToBytes(cis, (int) (file.length() - cis.bytesRead));
             return entry.toCacheEntry(data);
         } catch (IOException e) {
@@ -135,9 +148,11 @@ public class DiskBasedCache implements Cache {
     /**
      * Initializes the DiskBasedCache by scanning for all files currently in the
      * specified root directory. Creates the root directory if necessary.
+     * 初始化DiskBasedCache，通过扫描在指定目录的所有的文件，如果需要，可以创建新的目录。
      */
     @Override
     public synchronized void initialize() {
+        //判断如果目录不存在，那么则创建目录
         if (!mRootDirectory.exists()) {
             if (!mRootDirectory.mkdirs()) {
                 VolleyLog.e("Unable to create cache dir %s", mRootDirectory.getAbsolutePath());
@@ -149,6 +164,7 @@ public class DiskBasedCache implements Cache {
         if (files == null) {
             return;
         }
+        //扫描文件，构建cache的map，便于以后使用。
         for (File file : files) {
             BufferedInputStream fis = null;
             try {
@@ -172,6 +188,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Invalidates an entry in the cache.
+     * 判断cache中的entry是否有效
      * @param key Cache key
      * @param fullExpire True to fully expire the entry, false to soft expire
      */
@@ -210,6 +227,7 @@ public class DiskBasedCache implements Cache {
             return;
         } catch (IOException e) {
         }
+        //不太明白为什么要将file删除？
         boolean deleted = file.delete();
         if (!deleted) {
             VolleyLog.d("Could not clean up file %s", file.getAbsolutePath());
@@ -231,6 +249,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Creates a pseudo-unique filename for the specified cache key.
+     * 对于指定的cache key，创建一个伪唯一的文件名。
      * @param key The key to generate a file name for.
      * @return A pseudo-unique filename.
      */
@@ -243,6 +262,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Returns a file object for the given cache key.
+     * 根据key获取对应的File
      */
     public File getFileForKey(String key) {
         return new File(mRootDirectory, getFilenameForKey(key));
@@ -250,6 +270,7 @@ public class DiskBasedCache implements Cache {
 
     /**
      * Prunes the cache to fit the amount of bytes specified.
+     * 剪枝以满足cache的带小哦啊符合要求
      * @param neededSpace The amount of bytes we are trying to fit into the cache.
      */
     private void pruneIfNeeded(int neededSpace) {
@@ -338,18 +359,23 @@ public class DiskBasedCache implements Cache {
     static class CacheHeader {
         /** The size of the data identified by this CacheHeader. (This is not
          * serialized to disk. */
+        /** 数据大小，该数据不会被写入到磁盘当中 */
         public long size;
 
         /** The key that identifies the cache entry. */
+        /** 用来标示cache entry的key */
         public String key;
 
         /** ETag for cache coherence. */
+        /** 用来保持cache一致性的ETag */
         public String etag;
 
         /** Date of this response as reported by the server. */
+        /** 服务器返回的数据的时间 */
         public long serverDate;
 
         /** TTL for this record. */
+        /** TTL：Time to Live*/
         public long ttl;
 
         /** Soft TTL for this record. */
@@ -377,12 +403,15 @@ public class DiskBasedCache implements Cache {
 
         /**
          * Reads the header off of an InputStream and returns a CacheHeader object.
+         * 从InputStream中读取数据流并构造CacheHeader
          * @param is The InputStream to read from.
          * @throws IOException
          */
         public static CacheHeader readHeader(InputStream is) throws IOException {
             CacheHeader entry = new CacheHeader();
+            //读取一个magic数字
             int magic = readInt(is);
+            //如果不是CACHE_MAGIC的话，说明不是cache文件，抛出异常
             if (magic != CACHE_MAGIC) {
                 // don't bother deleting, it'll get pruned eventually
                 throw new IOException();
@@ -436,6 +465,9 @@ public class DiskBasedCache implements Cache {
 
     }
 
+    /**
+     *一个包装输入类，可以统计读取的字节个数。 
+     */
     private static class CountingInputStream extends FilterInputStream {
         private int bytesRead = 0;
 
@@ -472,6 +504,7 @@ public class DiskBasedCache implements Cache {
     /**
      * Simple wrapper around {@link InputStream#read()} that throws EOFException
      * instead of returning -1.
+     * 针对InputStream的read()函数的包装类，与以往返回-1不同，此处会抛出EOFException
      */
     private static int read(InputStream is) throws IOException {
         int b = is.read();
@@ -521,6 +554,7 @@ public class DiskBasedCache implements Cache {
         return n;
     }
 
+    /** 首先写出字符串的长度，然后再写入字符串的byte[]形式 */
     static void writeString(OutputStream os, String s) throws IOException {
         byte[] b = s.getBytes("UTF-8");
         writeLong(os, b.length);
