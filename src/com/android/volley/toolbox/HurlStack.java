@@ -57,6 +57,7 @@ public class HurlStack implements HttpStack {
         /**
          * Returns a URL to use instead of the provided one, or null to indicate
          * this URL should not be used at all.
+         * 相当于一个URL拦截器，比如本来的网址是http://android.com。想修改为https://android.com.就可以用这个
          */
         public String rewriteUrl(String originalUrl);
     }
@@ -76,6 +77,7 @@ public class HurlStack implements HttpStack {
     }
 
     /**
+     * 如果需要使用Https传输数据，需要使用此构造函数
      * @param urlRewriter Rewriter to use for request URLs
      * @param sslSocketFactory SSL factory to use for HTTPS connections
      */
@@ -87,6 +89,7 @@ public class HurlStack implements HttpStack {
     @Override
     public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
+        //获取URL
         String url = request.getUrl();
         HashMap<String, String> map = new HashMap<String, String>();
         map.putAll(request.getHeaders());
@@ -103,9 +106,12 @@ public class HurlStack implements HttpStack {
         for (String headerName : map.keySet()) {
             connection.addRequestProperty(headerName, map.get(headerName));
         }
+        //设置一些请求的参数，比如POST还是PUT方法之类的
         setConnectionParametersForRequest(connection, request);
         // Initialize HttpResponse with data from the HttpURLConnection.
+        // 设置协议版本
         ProtocolVersion protocolVersion = new ProtocolVersion("HTTP", 1, 1);
+        //从HTTP服务器获取数据，此过程可能消耗时间较长
         int responseCode = connection.getResponseCode();
         if (responseCode == -1) {
             // -1 is returned by getResponseCode() if the response code could not be retrieved.
@@ -154,6 +160,7 @@ public class HurlStack implements HttpStack {
 
     /**
      * Opens an {@link HttpURLConnection} with parameters.
+     * 创建HttpURLConnection
      * @param url
      * @return an open connection
      * @throws IOException
