@@ -112,43 +112,56 @@ public class CacheDispatcher extends Thread {
                 }
 
                 // Attempt to retrieve this item from cache.
+                // 尝试从Cache中获取数据
                 Cache.Entry entry = mCache.get(request.getCacheKey());
                 if (entry == null) {
+                    // 从Cache中获取数据失败，意味着cache miss，需要从网络中重新获取
                     request.addMarker("cache-miss");
                     // Cache miss; send off to the network dispatcher.
+                    // 将请求添加到网络任务队列中。
                     mNetworkQueue.put(request);
                     continue;
                 }
 
                 // If it is completely expired, just send it to the network.
+                // 此处和上面情况类似，但是不是cache缺失，而是cache过期
                 if (entry.isExpired()) {
                     request.addMarker("cache-hit-expired");
+                    // 更新之前，首先将数据保存一份。
                     request.setCacheEntry(entry);
+                    // 将Request添加到网络任务队列当中。
                     mNetworkQueue.put(request);
                     continue;
                 }
 
                 // We have a cache hit; parse its data for delivery back to the request.
+                // 到此处已经检查过Cache是否确实，Cache是否过期，此时说明数据从Cache中取回即可。
                 request.addMarker("cache-hit");
+                // 首先将cache中的raw数据进行解析。
                 Response<?> response = request.parseNetworkResponse(
                         new NetworkResponse(entry.data, entry.responseHeaders));
                 request.addMarker("cache-hit-parsed");
 
                 if (!entry.refreshNeeded()) {
                     // Completely unexpired cache hit. Just deliver the response.
+                    // 此时数据不需要更新，直接将数据分发出去。
                     mDelivery.postResponse(request, response);
                 } else {
                     // Soft-expired cache hit. We can deliver the cached response,
                     // but we need to also send the request to the network for
                     // refreshing.
+                    // 此时数据虽然说是cache命中了，但数据需要进行更新。
                     request.addMarker("cache-hit-refresh-needed");
                     request.setCacheEntry(entry);
 
                     // Mark the response as intermediate.
+                    // 标记该response为一个中间结果，以后还会需要更新
                     response.intermediate = true;
 
                     // Post the intermediate response back to the user and have
                     // the delivery then forward the request along to the network.
+                    // 将中间结果返回给用户，并且将请求转发给网络层。
+                    // 但不清楚为什么要将添加到网络队列的过程放在其他线程中去做-->查看该方法的签名，该方法是首先将结果传递给用户，然后再执行Runnable
                     mDelivery.postResponse(request, response, new Runnable() {
                         @Override
                         public void run() {

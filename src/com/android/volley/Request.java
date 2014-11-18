@@ -39,11 +39,15 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Default encoding for POST or PUT parameters. See {@link #getParamsEncoding()}.
+     * 
+     * 默认的POST或者PUT的参数的编码方式，参见{@link #getParamsEncoding()}。
      */
     private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
 
     /**
      * Supported request methods.
+     * 
+     * 所支持的请求的方法
      */
     public interface Method {
         int DEPRECATED_GET_OR_POST = -1;
@@ -94,19 +98,27 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     private long mRequestBirthTime = 0;
 
     /** Threshold at which we should log the request (even when debug logging is not enabled). */
+    /** 猜测是当执行的时间超过该阈值的时候就记录Log，及时debug logging没有打开也会记录。*/
     private static final long SLOW_REQUEST_THRESHOLD_MS = 3000;
 
     /** The retry policy for this request. */
+    /** 重拾策略*/
     private RetryPolicy mRetryPolicy;
 
     /**
      * When a request can be retrieved from cache but must be refreshed from
      * the network, the cache entry will be stored here so that in the event of
      * a "Not Modified" response, we can be sure it hasn't been evicted from cache.
+     * 
+     * 如果说一个Request可以从cache中获得，但是必须要从网络上刷新最新的状态，cache的数据必须要保存在这里，
+     * 以便于当"Not Modified"的像一个的时候，我们能够确保从网络刷新的数据没有被cache修改。 
+     * 
+     * 这个地方还是不是特别清晰。
      */
     private Cache.Entry mCacheEntry = null;
 
     /** An opaque token tagging this request; used for bulk cancellation. */
+    /** 一个不透明的记号来标记这个请求，当需要迅速取消的时候使用*/
     private Object mTag;
 
     /**
@@ -179,6 +191,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * @return The hashcode of the URL's host component, or 0 if there is none.
+     * 
+     * 暂时不知道干嘛用的，只是返回了Host地址的hashcode
      */
     private static int findDefaultTrafficStatsTag(String url) {
         if (!TextUtils.isEmpty(url)) {
@@ -268,6 +282,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /**
      * Associates this request with the given queue. The request queue will be notified when this
      * request has finished.
+     * 
+     * 将请求Request与指定的RequestQueue绑定。当请求执行完成的时候，该request queue不会被终止。
      *
      * @return This Request object to allow for chaining.
      */
@@ -278,6 +294,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Sets the sequence number of this request.  Used by {@link RequestQueue}.
+     *
+     * 设置请求的序列号，被{@link RequestQueue}使用。
      *
      * @return This Request object to allow for chaining.
      */
@@ -305,6 +323,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Returns the cache key for this request.  By default, this is the URL.
+     * 
+     * 返回Request的CacheKey，默认值为请求的URL。
      */
     public String getCacheKey() {
         return getUrl();
@@ -346,6 +366,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * Returns a list of extra HTTP headers to go along with this request. Can
      * throw {@link AuthFailureError} as authentication may be required to
      * provide these values.
+     * 
+     * 返回额外的HTTP头信息的Map。默认情况下使用Collections.emptyMap()返回一个空的map。但子类会覆写该方法。
+     * 
      * @throws AuthFailureError In the event of auth failure
      */
     public Map<String, String> getHeaders() throws AuthFailureError {
@@ -431,6 +454,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * Returns which encoding should be used when converting POST or PUT parameters returned by
      * {@link #getParams()} into a raw POST or PUT body.
      *
+     * 返回POST或者PUT的时候的参数的编码。
+     * 
      * <p>This controls both encodings:
      * <ol>
      *     <li>The string encoding used when converting parameter names and values into bytes prior
@@ -539,6 +564,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /**
      * Mark this request as having a response delivered on it.  This can be used
      * later in the request's lifetime for suppressing identical responses.
+     * 
+     * 用来标记该请求已经被分发了。可以在以后的该请求的生命周期中使用。
      */
     public void markDelivered() {
         mResponseDelivered = true;
@@ -546,6 +573,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Returns true if this request has had a response delivered for it.
+     * 
+     * 判断该请求是否已经被分发了。
      */
     public boolean hasHadResponseDelivered() {
         return mResponseDelivered;
@@ -556,6 +585,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * and return an appropriate response type. This method will be
      * called from a worker thread.  The response will not be delivered
      * if you return null.
+     * 
+     * 子类必须实现该方法来解析网络的返回结果。该方法会被worker线程调用。如果我们的返回值是null的话，response不会被分发。
+     * 
      * @param response Response from the network
      * @return The parsed response, or null in the case of an error
      */
@@ -563,6 +595,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
 
     /**
      * Subclasses can override this method to parse 'networkError' and return a more specific error.
+     *
+     * 子类必须覆写该方法来声明网络错误，或者其他的更加指定的错误。
      *
      * <p>The default implementation just returns the passed 'networkError'.</p>
      *
@@ -577,6 +611,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * Subclasses must implement this to perform delivery of the parsed
      * response to their listeners.  The given response is guaranteed to
      * be non-null; responses that fail to parse are not delivered.
+     * 
+     * 子类必须要实现该方法用来分发解析过的Response。给定的response必须保证为非空；如果无法解析的Response那么就不会被分发。
+     * 
      * @param response The parsed response returned by
      * {@link #parseNetworkResponse(NetworkResponse)}
      */
@@ -597,6 +634,8 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /**
      * Our comparator sorts from high to low priority, and secondarily by
      * sequence number to provide FIFO ordering.
+     * 
+     * 用于优先级排队，如果优先级相同，那么就根据先到先得，根据序列号进行排队。
      */
     @Override
     public int compareTo(Request<T> other) {
