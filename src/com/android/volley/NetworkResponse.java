@@ -23,6 +23,7 @@ import java.util.Map;
 
 /**
  * Data and headers returned from {@link Network#performRequest(Request)}.
+ * 使用{@link Network#performRequest(Request)}返回的数据和头信息
  */
 public class NetworkResponse {
     /**

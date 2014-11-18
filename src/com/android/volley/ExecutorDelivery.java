@@ -22,13 +22,16 @@ import java.util.concurrent.Executor;
 
 /**
  * Delivers responses and errors.
+ * 派发响应或者错误信息
  */
 public class ExecutorDelivery implements ResponseDelivery {
     /** Used for posting responses, typically to the main thread. */
+    /** 用来派发响应，一般是派发给main线程*/
     private final Executor mResponsePoster;
 
     /**
      * Creates a new response delivery interface.
+     * 创建一个新的响应派发的接口。
      * @param handler {@link Handler} to post responses on
      */
     public ExecutorDelivery(final Handler handler) {
@@ -36,6 +39,7 @@ public class ExecutorDelivery implements ResponseDelivery {
         mResponsePoster = new Executor() {
             @Override
             public void execute(Runnable command) {
+                //默认情况下，这段代码的调用位于调用者的线程之上。
                 handler.post(command);
             }
         };
@@ -72,6 +76,7 @@ public class ExecutorDelivery implements ResponseDelivery {
     /**
      * A Runnable used for delivering network responses to a listener on the
      * main thread.
+     * 用来将网络响应在主线程分发给listener的线程
      */
     @SuppressWarnings("rawtypes")
     private class ResponseDeliveryRunnable implements Runnable {
@@ -89,12 +94,14 @@ public class ExecutorDelivery implements ResponseDelivery {
         @Override
         public void run() {
             // If this request has canceled, finish it and don't deliver.
+            // 如果request已经被取消，那么就不需要派发结果。
             if (mRequest.isCanceled()) {
                 mRequest.finish("canceled-at-delivery");
                 return;
             }
 
             // Deliver a normal response or error, depending.
+            // 如果Response解析成功，那么将任务派发给Request。
             if (mResponse.isSuccess()) {
                 mRequest.deliverResponse(mResponse.result);
             } else {
@@ -103,6 +110,7 @@ public class ExecutorDelivery implements ResponseDelivery {
 
             // If this is an intermediate response, add a marker, otherwise we're done
             // and the request can be finished.
+            // 如果是中间结果，那么就添加标记，否则则调用finish命令，结束该任务。
             if (mResponse.intermediate) {
                 mRequest.addMarker("intermediate-response");
             } else {
@@ -110,6 +118,7 @@ public class ExecutorDelivery implements ResponseDelivery {
             }
 
             // If we have been provided a post-delivery runnable, run it.
+            // 此时任务已经派发完成，如果传入了其他的Runnable，那么就调用该Runnable。
             if (mRunnable != null) {
                 mRunnable.run();
             }

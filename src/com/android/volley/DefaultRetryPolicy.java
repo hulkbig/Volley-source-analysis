@@ -18,27 +18,35 @@ package com.android.volley;
 
 /**
  * Default retry policy for requests.
+ * 默认重试机制
  */
 public class DefaultRetryPolicy implements RetryPolicy {
     /** The current timeout in milliseconds. */
+    /** 当前的超时时间 */
     private int mCurrentTimeoutMs;
 
     /** The current retry count. */
+    /** 当前重试次数 */
     private int mCurrentRetryCount;
 
     /** The maximum number of attempts. */
+    /** 最大的重拾次数 */
     private final int mMaxNumRetries;
 
     /** The backoff multiplier for for the policy. */
+    /*** 补偿系数 */
     private final float mBackoffMultiplier;
 
     /** The default socket timeout in milliseconds */
+    /** 默认的超时时间 */
     public static final int DEFAULT_TIMEOUT_MS = 2500;
 
     /** The default number of retries */
+    /** 默认重试次数 */
     public static final int DEFAULT_MAX_RETRIES = 1;
 
     /** The default backoff multiplier */
+    /** 默认补偿系数 */
     public static final float DEFAULT_BACKOFF_MULT = 1f;
 
     /**
@@ -82,7 +90,9 @@ public class DefaultRetryPolicy implements RetryPolicy {
      */
     @Override
     public void retry(VolleyError error) throws VolleyError {
+        //重试次数+1
         mCurrentRetryCount++;
+        //下次尝试的时间
         mCurrentTimeoutMs += (mCurrentTimeoutMs * mBackoffMultiplier);
         if (!hasAttemptRemaining()) {
             throw error;
@@ -93,6 +103,7 @@ public class DefaultRetryPolicy implements RetryPolicy {
      * Returns true if this policy has attempts remaining, false otherwise.
      */
     protected boolean hasAttemptRemaining() {
+        //判断是否还有机会继续重试
         return mCurrentRetryCount <= mMaxNumRetries;
     }
 }

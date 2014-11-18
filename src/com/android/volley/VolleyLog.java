@@ -24,14 +24,18 @@ import java.util.List;
 import java.util.Locale;
 
 /** Logging helper class. */
+/** 日志工具类 */
 public class VolleyLog {
     public static String TAG = "Volley";
 
+    //根据系统设置，判断Log.VERBOSE是否可以Log输出。
     public static boolean DEBUG = Log.isLoggable(TAG, Log.VERBOSE);
 
     /**
      * Customize the log tag for your application, so that other apps
      * using Volley don't mix their logs with yours.
+     * 自定义log的tag，这样就不会和其他的使用Volley的程序的log混在一起了。
+     * 
      * <br />
      * Enable the log property for your tag before starting your app:
      * <br />
@@ -76,12 +80,17 @@ public class VolleyLog {
      * calling thread ID and method name.
      */
     private static String buildMessage(String format, Object... args) {
+        //判断args==null?如果为null，那么则直接输入format，否则则按照format格式化输出args
         String msg = (args == null) ? format : String.format(Locale.US, format, args);
+        //获取调用该函数的任务栈
         StackTraceElement[] trace = new Throwable().fillInStackTrace().getStackTrace();
 
+        //默认的调用者，如果无法找到调用的类，就打印为<unknow>
         String caller = "<unknown>";
         // Walk up the stack looking for the first caller outside of VolleyLog.
+        // 跟踪stack，找到从VolleyLog之外调用的第一个调用者
         // It will be at least two frames up, so start there.
+        // 至少包含两个帧，VolleyLog类，buildMessage方法，所以第3个开始，下标为2，参考：https://docs.oracle.com/javase/7/docs/api/java/lang/Throwable.html#printStackTrace()
         for (int i = 2; i < trace.length; i++) {
             Class<?> clazz = trace[i].getClass();
             if (!clazz.equals(VolleyLog.class)) {
@@ -99,6 +108,7 @@ public class VolleyLog {
 
     /**
      * A simple event log with records containing a name, thread ID, and timestamp.
+     * 一个简单的时间记录类，包括名称，thread Id，时间戳
      */
     static class MarkerLog {
         public static final boolean ENABLED = VolleyLog.DEBUG;
@@ -122,11 +132,12 @@ public class VolleyLog {
         private boolean mFinished = false;
 
         /** Adds a marker to this log with the specified name. */
+        /** 由于多个线程可能同时记录日志，所以该方法是线程安全的。  */
         public synchronized void add(String name, long threadId) {
             if (mFinished) {
                 throw new IllegalStateException("Marker added to finished log");
             }
-
+            //将新的记录添加到列表中
             mMarkers.add(new Marker(name, threadId, SystemClock.elapsedRealtime()));
         }
 
@@ -139,10 +150,11 @@ public class VolleyLog {
             mFinished = true;
 
             long duration = getTotalDuration();
+            //如果需要记录的时间太短，则直接不记录。
             if (duration <= MIN_DURATION_FOR_LOGGING_MS) {
                 return;
             }
-
+            //开始的时间
             long prevTime = mMarkers.get(0).time;
             d("(%-4d ms) %s", duration, header);
             for (Marker marker : mMarkers) {
@@ -163,6 +175,7 @@ public class VolleyLog {
         }
 
         /** Returns the time difference between the first and last events in this log. */
+        /** 获取从记录开始，到当前的时间 */
         private long getTotalDuration() {
             if (mMarkers.size() == 0) {
                 return 0;
