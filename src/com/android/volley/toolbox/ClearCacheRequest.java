@@ -26,6 +26,7 @@ import android.os.Looper;
 
 /**
  * A synthetic request used for clearing the cache.
+ * 一个认为的用来清空cache的缓存
  */
 public class ClearCacheRequest extends Request<Object> {
     private final Cache mCache;
@@ -46,14 +47,17 @@ public class ClearCacheRequest extends Request<Object> {
     @Override
     public boolean isCanceled() {
         // This is a little bit of a hack, but hey, why not.
+        // 清空cache
         mCache.clear();
         if (mCallback != null) {
             Handler handler = new Handler(Looper.getMainLooper());
+            //将该任务放到handler的最前面，使其首先得到处理。此时已经完成任务了，收尾工作。
             handler.postAtFrontOfQueue(mCallback);
         }
         return true;
     }
 
+    //优先级设置为最高，使得调度的时候首先得到处理
     @Override
     public Priority getPriority() {
         return Priority.IMMEDIATE;
