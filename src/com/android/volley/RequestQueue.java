@@ -54,7 +54,7 @@ public class RequestQueue {
      *          is <em>not</em> contained in that list. Is null if no requests are staged.</li>
      * </ul>
      * 
-     * 待命区：存储那些已经有一份拷贝，？？？并且在处理中的请求？？？。
+     * 待命区：那些需要Cache，还没有处理完的正在执行网络访问的Request
      * <ul>
      *     <li>containsKey(cacheKey) 标志着给定的cache关键字来说，已经有一个请求在运行当中了</li>
      *     <li>get(cacheKey) 返回指定key的等待的请求列表，如果请求正在处理当中，那么是不会包含在这个列表中。
