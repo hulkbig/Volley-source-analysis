@@ -70,7 +70,7 @@ import java.util.List;
  * 其方法是，当需要buffer的时候，从这里面取，如果没有合适的，那么就申请，如果申请到了的话，那么就将这块buffer从
  * 记录的List中删除。
  * 当buffer不用的时候，就将buffer归还，方法是，首先根据buffer的长度将buffer放入到mBuffersBySize的合适的位置上，
- * 然后判断新的buffer的大小是否超过了预设的大小限制，如果超过了的话，那么就从中删除那个占用空间最小/大的。
+ * 然后判断新的buffer的大小是否超过了预设的大小限制，如果超过了的话，那么就从中删除那个占用空间最小的。
  *
  */
 public class ByteArrayPool {
