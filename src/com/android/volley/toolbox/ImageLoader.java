@@ -97,7 +97,7 @@ public class ImageLoader {
      * of showing a default image until the network response is received, at which point
      * it will switch to either the actual image or the error image.
      * 
-     * ImageListener的默认实现，会搜线显示一个默认的图片，当networ返回之后，则会显示一个真实的图片。
+     * ImageListener的默认实现，会搜线显示一个默认的图片，当network返回之后，则会显示一个真实的图片。
      * 
      * @param imageView The imageView that the listener is associated with.
      * @param defaultImageResId Default image resource ID to use, or 0 if it doesn't exist.
@@ -330,7 +330,7 @@ public class ImageLoader {
          * The most relevant bitmap for the container. If the image was in cache, the
          * Holder to use for the final bitmap (the one that pairs to the requested URL).
          * 
-         * 容器最相关的bitmap。如果图片是在cache中，那么容器会使用这个来指向final bitmap。final不太明白什么意思。
+         * 容器最相关的bitmap。如果图片是在cache中，那么容器会使用这个来指向最终的bitmap。
          */
         private Bitmap mBitmap;
 
